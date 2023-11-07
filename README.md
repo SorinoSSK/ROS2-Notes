@@ -15,22 +15,33 @@ ROS2 is built on ***Data Distribution Service (DDS)*** which allows better commu
 ## Table of Content
 |S/N|Content                    |
 |--|---------------------------|
-|01|[Introduction](#introduction)
-|02|[Enabling wsl](#enabling-wsl)|
-|03|[Installing Ubuntu 22.04.2](#installing-ubuntu-22042)|
-|04|[Installing X server](#installing-x-server)|
-|05|[Creating ROS Package](#creating-ros-package)|
+|01|[**Introduction**](#introduction)
+|02|[**Enabling wsl**](#enabling-wsl)|
+|03|[**Installing Ubuntu 22.04.2**](#installing-ubuntu-22042)|
+|04|[**Installing X server**](#installing-x-server)|
+|05|[**Creating ROS Package**](#creating-ros-package)|
 |05.1|[Modify ROS Package Information](#modifying-package-information)|
-|06|[Building ROS package](#building-ros-package)|
+|06|[**Building ROS package**](#building-ros-package)|
 |06.1|[Updating Linux Environment](#updating-environment)|
 |06.2|[Running a node](#running-your-node)|
-|07|[ROS Commands](#ros-commands)|
-|08|[RQT](#rqt)
+|07|[**ROS Commands**](#ros-commands)|
+|07.1|[List Node](#list-node)|
+|07.2|[Get Node Information](#get-node-information)|
+|07.3|[List Topic](#list-topic)|
+|07.4|[List Topic with Verbose](#list-topic-with-verbose)|
+|07.5|[Print all messages published to a topic](#print-all-messages-published-to-a-topic)|
+|07.6|[Get Topic Type](#get-topic-type)|
+|07.7|[Publish To A Topic Using Command](#publishing-to-a-topic-using-command)|
+|07.8|[Getting Publish Rate Of a Topic](#getting-publish-rate-of-a-topic)|
+|07.9|[Remapping of Node](#remapping-of-node)|
+|08|[**RQT**](#rqt)
 |08.1|[Installing RQT](#installing-rqt)|
 |08.2|[Running RQT](#running-rqt)|
 |08.3|[RQT Graphing](#rqt-graphing)|
 |08.4|[RQT Plot](#rqt-plot)|
-|09|[Turtle Sims](#turtle-sims)|
+|09|[**ROS Service**](#ros-service)|
+|09|[**ROS Param**](#ros-service)|
+|10|[**Turtle Sims**](#turtle-sims)|
 
 
 
@@ -261,7 +272,97 @@ or
 ```
 ros2 run turtlesim turtlesim_node
 ```
-
+### List all services
+Print information about active services.
+```
+ros2 service list
+```
+### Call a service
+Call a service with provided arguments.
+```
+ros2 service call <service_name> <service_type> <arguments>
+```
+e.g.
+```
+ros2 service call /clear std_srvs/srv/Empty
+```
+### Get a service type
+Prints service type.
+```
+ros2 service type <service_name>
+```
+### Find a service
+Print services by service type.
+```
+ros2 service find <service_type>
+```
+### Get service's input argument
+***<service_type>*** can be retrieved from "[**Get a service type**](#get-a-service-type)".
+```
+ros2 interface show <service_type>
+```
+### List all param
+This will list out all available node's parameters.
+```
+ros2 param list
+```
+e.g. Output
+```
+/teleop_turtle:
+    scale_angular
+    scale_linear
+    use_sim_time
+/turtlesim:
+    background_b
+    background_g
+    background_r
+    use_sim_time
+```
+### Set a param
+This function is similar to a setter function.
+```
+ros2 param set <node_name> <parameter_name> <value>
+```
+e.g.
+```
+ros2 param set /turtlesim background_r 150
+```
+### Get a param
+This function is similar to a getter function.
+```
+ros2 param get <node_name> <parameter_name>
+```
+e.g.
+```
+ros2 param get /turtlesim background_g
+```
+### Get all param values (param dump)
+This function get all param value of a node.
+```
+ros2 param dump <node_name>
+```
+You could store param values by echoing them into a file.
+```
+ros2 param dump /turtlesim > myparams.yaml
+```
+### Loading param from yaml file
+This function loads a yaml file parameter values to a node.
+```
+ros2 param load <node_name> <directory/parameter_file>
+```
+e.g.
+```
+ros2 param load /turtlesim myparams.yaml
+```
+### Executing a node with a param file
+You could run a node and initialise it with your param file.
+```
+ros2 run <package_name> <node_name> --ros-args --params-file <file_name>
+```
+e.g.
+```
+ros2 run turtlesim turtlesim_node --ros-args --params-file myparams.yaml
+```
 ## RQT
 RQT is a graphical user interface that gave an UI interaction with ROS.
 
@@ -288,6 +389,34 @@ RQT plot plots data that are being published to a topic.
 ros2 run rqt_plot rqt_plot
 ```
 ![Alt text](/Asset_Image/RQT%20Plot.png "RQT Plot")
+
+## ROS Service
+ROS service is an alternative for nodes to communicate by sending a request and receiving a response. It performs similarly to sending a publishing to a topic using :
+```
+ros2 topic pub <method> <topic_name> <msg_type> '<args>'
+```
+
+ROS service has the following functions:
+|                 |                                        |
+|-----------------|----------------------------------------|
+|[ros2 service list](#list-all-services)| print information about active services|
+|[ros2 service call](#call-a-service)| call the service with the provided args|
+|[ros2 service type](#get-a-service-type)| print service type                     |
+|[ros2 service find](#find-a-service)| find services by service type          |
+## ROS Param
+ROS param allows us to store and manipulate data on the ROS Paramerter Server. ROS Parameter server uses a YAML markup language to store information such as integers, float, boolean, and list.
+
+ROS param has the following functions:
+|                   |                                       |
+|-------------------|---------------------------------------|
+|[ros2 param set](#set-a-param)|set parameter|
+|[ros2 param get](#get-a-param)|get parameter|
+|[ros2 param load](#loading-param-from-yaml-file)|load parameters from file|
+|[ros2 param dump](#get-all-param-values-param-dump)|dump parameters to file|
+|ros2 param delete  |delete parameter|
+|[ros2 param list](#list-all-param)|list parameter names|
+|ros2 param describe| Show descriptive information about parameters|
+
 
 ## Turtle Sims
 Turtle Sims is a program that allows user to better learn about the concepts of Nodes and Topics.
