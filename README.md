@@ -34,17 +34,33 @@ ROS2 is built on ***Data Distribution Service (DDS)*** which allows better commu
 |07.7|[Publish To A Topic Using Command](#publishing-to-a-topic-using-command)|
 |07.8|[Getting Publish Rate Of a Topic](#getting-publish-rate-of-a-topic)|
 |07.9|[Remapping of Node](#remapping-of-node)|
+|07.10|[Overlays](#overlays)|
+|07.11|[List all Services](#list-all-services)|
+|07.12|[Call a Service](#call-a-service)|
+|07.13|[Get a Service Type](#get-a-service-type)|
+|07.14|[Find a Service](#find-a-service)|
+|07.15|[Get Service's Input Argument](#get-services-input-argument)|
+|07.16|[List all Params](#list-all-param)|
+|07.17|[Set a Param](#set-a-param)|
+|07.18|[Get a Param](#get-a-param)|
+|07.19|[Get all Param Values](#get-all-param-values-param-dump)|
+|07.20|[Loading Param From YAML File](#loading-param-from-yaml-file)|
+|07.21|[Executing node with Param File](#executing-a-node-with-a-param-file)|
 |08|[**RQT**](#rqt)
 |08.1|[Installing RQT](#installing-rqt)|
 |08.2|[Running RQT](#running-rqt)|
 |08.3|[RQT Graphing](#rqt-graphing)|
 |08.4|[RQT Plot](#rqt-plot)|
 |09|[**ROS Service**](#ros-service)|
-|09|[**ROS Param**](#ros-service)|
-|10|[**Turtle Sims**](#turtle-sims)|
-
-
-
+|10|[**ROS Param**](#ros-service)|
+|11|[**Launch File**](#launch-file)|
+|11.1|[Executing Launch File](#executing-a-launch-file)|
+|11.2|[Creating Launch File](#creating-a-launch-file)|
+|12|[**Custom ROS Message**](#ros-message)|
+|12.1|[Creating ROS Message](#creating-a-custom-ros-message)|
+|12.2|[Creating Publisher Node](#create-a-publisher-node-for-your-message)|
+|12.3|[Creating Subscriber Node](#create-a-subscriber-node)|
+|13|[**Turtle Sims**](#turtle-sims)|
 
 ## Enabling wsl
 **Step 1:** Search for **Windows Features**. 
@@ -416,7 +432,353 @@ ROS param has the following functions:
 |ros2 param delete  |delete parameter|
 |[ros2 param list](#list-all-param)|list parameter names|
 |ros2 param describe| Show descriptive information about parameters|
+## Launch File
+A launch file allow ROS to launch application using scripts or to execute a list of ROS function.
 
+### Executing a launch file
+```
+ros2 launch <package> <filename.launch.py>
+```
+e.g.
+```
+ros2 launch turtlesim multisim.launch.py
+```
+### Creating a launch file
+For convention, your launch file will reside within your package folder. Therefore to create a new launch file, you could do the following:
+
+**Step 1:** Go to your package directory.
+```
+cd ~/<Your Directory>/src/<package_name>
+```
+e.g.
+```
+cd ~/ros2_ws/src/my_package
+```
+**Step 2:** Create a launch folder and enter the directory
+```
+mkdir launch
+```
+```
+cd launch
+```
+**Step 3:** Create your launch file
+```
+nano <file_name>.launch.py
+```
+e.g.
+```
+nano my_file.launch.py
+```
+**Step 4:** Program your launch file\
+You could reference the following to generate your launch file.
+```
+from launch import LaunchDescription
+from launch_ros.actions import Node
+
+def generate_launch_description():
+    return LaunchDescription([
+        Node(
+            package='turtlesim',
+            namespace='turtlesim1',
+            executable='turtlesim_node',
+            name='sim'
+        ),
+        Node(
+            package='turtlesim',
+            namespace='turtlesim2',
+            executable='turtlesim_node',
+            name='sim'
+        ),
+        Node(
+            package='turtlesim',
+            executable='mimic',
+            name='mimic',
+            remappings=[
+                ('/input/pose', '/turtlesim1/turtle1/pose'),
+                ('/output/cmd_vel', '/turtlesim2/turtle1/cmd_vel'),
+        ]
+    )
+])
+```
+Alternatively you could access ROS's turtle sim launch file to reference. The directory of the turtle sim launch file will be here; ```/opt/ros/humble/share/turtlesim/launch/multisim.launch.py```
+
+## ROS Message
+ROS message are messages that are being sent to a topic and the argument of these messages are stored as a text file to describe the fileds of a ROS message. All message text file will reside within the ***\<interface>*** file.
+
+ROS can contain the Following field types.
+- int8, int16, int32, int64 (plus uint*)
+- float32, float64
+- string
+- time, duration
+- other msg files
+- variable-length array[] and fixed-length array[C] 
+
+### Creating a custom ROS message
+**Step 1:** Go to your ***src*** directory.
+```
+cd ~/<your_directory>/src
+```
+**Step 2:** Create an interface directory.
+```
+ros2 pkg create --build-type ament_cmake <interface_name>
+```
+**Step 3:** Access the newly generated interface directory.
+```
+cd <interface_name>
+```
+**Step 4:** Create a directory for your message files.
+```
+mkdir <message_folder_name>
+```
+**Step 5:** Create a message file.
+```
+nano message_file_name.msg
+```
+e.g.
+```
+nano MyMessage.msg
+```
+**Step 6:** Define your message's input and output type in your message file.
+```
+int64 val1      // Input message
+float64 val2
+---
+string val3      // Output message
+unit8 val4
+```
+**Step 7:** Declare your message file for building inside package.xml file stored in your <interface_name> directory.
+```
+nano package.xml
+```
+Type the following into the end of ***\<package> \</package>*** element of your package.xml file.
+```
+<depend><message_file_name></depend>
+<buildtool_depend>rosidl_default_generators</buildtool_depend>
+<exec_depend>rosidl_default_runtime</exec_depend>
+<member_of_group>rosidl_interface_packages</member_of_group>
+```
+e.g.
+```
+<package format="3">
+    .
+    .
+    .
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
+
+    <depend>MyMessage</depend>
+    <buildtool_depend>rosidl_default_generators</buildtool_depend>
+    <exec_depend>rosidl_default_runtime</exec_depend>
+    <member_of_group>rosidl_interface_packages</member_of_group>
+</package>
+```
+**Step 8:** Define your message file location for your message file declared in ***Step 7***.\
+Open ***CMakeLists.txt*** within your ***\<interface>*** folder.
+```
+nano CMakeLists.txt
+```
+Insert the following line into your ***CMakeLists.txt*** file.
+```
+find_package(geometry_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+    "<message_folder_name>/<message_file_name1>.msg"
+    "<message_folder_name>/<message_file_name2>.msg"
+    DEPENDENCIES <message_folder_name> # Add packages that above messages depend on
+)
+```
+**Step 9:** Go to the root directory of your ROS package. (Directory that contain ***/src***).
+```
+cd ~/<your_directory>
+```
+**Step 10:** Build the modified ***\<interface_name>***.
+```
+colcon build --package-select <interface_name>
+```
+**Step 11:** Re-source your setup file.
+```
+source install/setup.bash
+```
+**Step 12:** Verify your message.
+```
+ros2 interface show <package_name>/<message_folder_name>/<message_file_name>
+```
+### Create a publisher node for your message
+**Step 1:** Go to your package folder.
+```
+cd ~/<your_directory>/src/<package_name>/<package_name>
+```
+**Step 2:** Create a publisher file.
+```
+nano <publisher_file_name>.py
+```
+e.g.
+```
+publisher_member_function.py
+```
+**Step 3:** Generate your publisher file.\
+You may use the following as a reference.
+```
+import rclpy
+from rclpy.node import Node # To use the Node class
+from std_msgs.msg import String # imports the built-in string message type
+
+class MinimalPublisher(Node): # creates a class that inherits from Node
+    def __init__(self):
+        super().__init__('minimal_publisher') # defines the node name
+        # topic name = ‘topic’
+        # queue size = 10
+        self.publisher_ = self.create_publisher(String, 'topic', 10)
+        timer_period = 0.5 # seconds # executes every 500ms
+        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.i = 0 # a counter used in the callback function below
+
+    def timer_callback(self): # creates a message with the counter value appended
+        msg = String()
+        msg.data = 'Hello World: %d' % self.i
+        self.publisher_.publish(msg)
+        self.get_logger().info('Publishing: "%s"' % msg.data) # published to console
+        self.i += 1
+
+def main(args=None): # main function
+    rclpy.init(args=args)
+    minimal_publisher = MinimalPublisher()
+    rclpy.spin(minimal_publisher) # loops until destroyed
+    # Destroy the node explicitly
+    # (optional - otherwise it will be done automatically
+    # when the garbage collector destroys the node object)
+    minimal_publisher.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+main()
+```
+**Step 4:** Add dependencies to your ***package.xml*** file in your ***\<package_name>*** folder.
+```
+nano package.xml
+```
+```
+<exec_depend>rclpy</exec_depend>
+<exec_depend><message_file_name></exec_depend>
+```
+e.g. The following add string as a message argument.
+```
+<exec_depend>rclpy</exec_depend>
+<exec_depend>std_msgs</exec_depend>
+```
+**Step 5:** Add dependencies to your ***setup.py*** file in the same directory as "***Step 4***".
+```
+entry_points={
+    'console_scripts': [
+        'my_node = <package_name>.<node_name>:main',
+        'talker = <package_name>.<publisher_file_name>:main',       // Add this line
+    ],
+},
+```
+**Step 6:** Build your package.
+```
+cd ~/<your_directory>
+```
+```
+colcon build --packages-select <package_name>
+```
+e.g.
+```
+colcon build --packages-select my_package
+```
+**Step 7:** Re-source your ***setup*** file.
+```
+source install/setup.bash
+```
+**Step 8:** Run your publisher.
+```
+ros2 run <package_name> talker
+```
+### Create a subscriber node
+**Step 1:** Go to your package folder.
+```
+cd ~/<your_directory>/src/<package_name>/<package_name>
+```
+**Step 2:** Create a subscriber file.
+```
+nano <subscriber_file_name>.py
+```
+e.g.
+```
+subscriber_member_function.py
+```
+**Step 3:** Generate your subscriber file.\
+You may use the following as a reference.
+```
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+# nearly identical to the publisher
+
+class MinimalSubscriber(Node):
+    # Uses the same topic: ‘topic’
+    def __init__(self):
+        super().__init__('minimal_subscriber')
+        self.subscription = self.create_subscription(
+            String,
+            'topic',
+            self.listener_callback,
+            10)
+        self.subscription # prevent unused variable warning
+
+    def listener_callback(self, msg):
+        # prints an info message to the cosole along with the data received
+        self.get_logger().info('I heard: "%s"' % msg.data)
+
+def main(args=None):
+    rclpy.init(args=args)
+    minimal_subscriber = MinimalSubscriber()
+    rclpy.spin(minimal_subscriber)
+
+    # Destroy the node explicitly
+    # (optional - otherwise it will be done automatically
+    # when the garbage collector destroys the node object)
+    minimal_subscriber.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+```
+**Step 4:** Add dependencies to your ***package.xml*** file in your ***\<package_name>*** folder.
+
+Since the subscriber node uses the same dependencies or the same message type as the publisher, we do not need to add anything new to the ***package.xml*** file.
+
+**Step 5:** Add dependencies to your ***setup.py*** file in the same directory as "***Step 4***".
+```
+entry_points={
+    'console_scripts': [
+        'my_node = <package_name>.<node_name>:main',
+        'talker = <package_name>.<publisher_file_name>:main',
+        'listener = package_name>.<subscriber_file_name>:main',       // Add this line
+    ],
+},
+```
+**Step 6:** Build your package.
+```
+cd ~/<your_directory>
+```
+```
+colcon build --packages-select <package_name>
+```
+e.g.
+```
+colcon build --packages-select my_package
+```
+**Step 7:** Re-source your ***setup*** file.
+```
+source install/setup.bash
+```
+**Step 8:** Run your publisher.
+```
+ros2 run <package_name> listener
+```
 
 ## Turtle Sims
 Turtle Sims is a program that allows user to better learn about the concepts of Nodes and Topics.
