@@ -51,11 +51,12 @@ ROS2 is built on ***Data Distribution Service (DDS)*** which allows better commu
 |08.2|[Running RQT](#running-rqt)|
 |08.3|[RQT Graphing](#rqt-graphing)|
 |08.4|[RQT Plot](#rqt-plot)|
-|09|[**ROS Service**](#ros-service)|
-|10|[**ROS Param**](#ros-service)|
-|11|[**Launch File**](#launch-file)|
+|09|[**Launch File**](#launch-file)|
 |11.1|[Executing Launch File](#executing-a-launch-file)|
 |11.2|[Creating Launch File](#creating-a-launch-file)|
+|10|[**ROS Param**](#ros-service)|
+|11|[**ROS Service**](#ros-service)|
+|11.1|[Creating ROS Service](#creating-a-custom-ros-service)|
 |12|[**Custom ROS Message**](#ros-message)|
 |12.1|[Creating ROS Message](#creating-a-custom-ros-message)|
 |12.2|[Creating Publisher Node](#create-a-publisher-node-for-your-message)|
@@ -173,6 +174,10 @@ You could too build only your package file.
 ```
 colcon build --packages-select <package_name>
 ```
+If you would like to build multiple packages:
+```
+colcon build --packages-select <package_name1> <package_name2>
+```
 ### Updating environment
 After every build, you should ***update your environment*** with your ***new package***. 
 ```
@@ -183,6 +188,8 @@ After building your package and setting up your environment, you could then proc
 ```
 ros2 run <package_name> <node_name>
 ```
+***Notes: Some dependencies may be directory sensitive.***\
+***E.g. Dependencies that tries to retrieve OS current directory will be affected by where you execute ros2 run***
 ## ROS commands
 ### List node
 ```
@@ -289,7 +296,7 @@ or
 ros2 run turtlesim turtlesim_node
 ```
 ### List all services
-Print information about active services.
+Print information of active services.
 ```
 ros2 service list
 ```
@@ -406,32 +413,6 @@ ros2 run rqt_plot rqt_plot
 ```
 ![Alt text](/Asset_Image/RQT%20Plot.png "RQT Plot")
 
-## ROS Service
-ROS service is an alternative for nodes to communicate by sending a request and receiving a response. It performs similarly to sending a publishing to a topic using :
-```
-ros2 topic pub <method> <topic_name> <msg_type> '<args>'
-```
-
-ROS service has the following functions:
-|                 |                                        |
-|-----------------|----------------------------------------|
-|[ros2 service list](#list-all-services)| print information about active services|
-|[ros2 service call](#call-a-service)| call the service with the provided args|
-|[ros2 service type](#get-a-service-type)| print service type                     |
-|[ros2 service find](#find-a-service)| find services by service type          |
-## ROS Param
-ROS param allows us to store and manipulate data on the ROS Paramerter Server. ROS Parameter server uses a YAML markup language to store information such as integers, float, boolean, and list.
-
-ROS param has the following functions:
-|                   |                                       |
-|-------------------|---------------------------------------|
-|[ros2 param set](#set-a-param)|set parameter|
-|[ros2 param get](#get-a-param)|get parameter|
-|[ros2 param load](#loading-param-from-yaml-file)|load parameters from file|
-|[ros2 param dump](#get-all-param-values-param-dump)|dump parameters to file|
-|ros2 param delete  |delete parameter|
-|[ros2 param list](#list-all-param)|list parameter names|
-|ros2 param describe| Show descriptive information about parameters|
 ## Launch File
 A launch file allow ROS to launch application using scripts or to execute a list of ROS function.
 
@@ -443,6 +424,7 @@ e.g.
 ```
 ros2 launch turtlesim multisim.launch.py
 ```
+
 ### Creating a launch file
 For convention, your launch file will reside within your package folder. Therefore to create a new launch file, you could do the following:
 
@@ -502,8 +484,124 @@ def generate_launch_description():
 ```
 Alternatively you could access ROS's turtle sim launch file to reference. The directory of the turtle sim launch file will be here; ```/opt/ros/humble/share/turtlesim/launch/multisim.launch.py```
 
+## ROS Param
+ROS param allows us to store and manipulate data on the ROS Paramerter Server. ROS Parameter server uses a YAML markup language to store information such as integers, float, boolean, and list.
+
+ROS param has the following functions:
+|                   |                                       |
+|-------------------|---------------------------------------|
+|[ros2 param set](#set-a-param)|set parameter|
+|[ros2 param get](#get-a-param)|get parameter|
+|[ros2 param load](#loading-param-from-yaml-file)|load parameters from file|
+|[ros2 param dump](#get-all-param-values-param-dump)|dump parameters to file|
+|ros2 param delete  |delete parameter|
+|[ros2 param list](#list-all-param)|list parameter names|
+|ros2 param describe| Show descriptive information about parameters|
+
+## ROS Service
+ROS service is an alternative for nodes to communicate by sending a request and receiving a response. ***ROS Service allows user to send arguments through through "ros2 run"***. It performs similarly to sending a publishing to a topic using :
+```
+ros2 topic pub <method> <topic_name> <msg_type> '<args>'
+```
+
+ROS service has the following functions:
+|                 |                                        |
+|-----------------|----------------------------------------|
+|[ros2 service list](#list-all-services)| print information about active services|
+|[ros2 service call](#call-a-service)| call the service with the provided args|
+|[ros2 service type](#get-a-service-type)| print service type                     |
+|[ros2 service find](#find-a-service)| find services by service type          |
+
+### Creating a custom ROS Service
+**Step 1:** Go to your ***src*** directory.
+```
+cd ~/<your_directory>/src
+```
+**Step 2:** Create an interface directory.
+```
+ros2 pkg create --build-type ament_cmake <interface_name>
+```
+**Step 3:** Access the newly generated interface directory.
+```
+cd <interface_name>
+```
+**Step 4:** Create a directory for your service files.
+```
+mkdir <service_folder_name>
+```
+**Step 5:** Create a service file.
+```
+nano service_file_name.srv
+```
+e.g.
+```
+nano MyService.srv
+```
+**Step 6:** Define your service's input type in your service file.
+```
+int64 val1
+float64 val2
+```
+**Step 7:** Declare your service file for building inside package.xml file stored in your <interface_name> directory.
+```
+nano package.xml
+```
+Type the following into the end of ***\<package> \</package>*** element of your package.xml file.\
+You need not enter ```<depend><dependent_service></depend>``` if your program is not dependent on a service type.
+```
+<depend><dependent_service></depend>
+<buildtool_depend>rosidl_default_generators</buildtool_depend>
+<exec_depend>rosidl_default_runtime</exec_depend>
+<member_of_group>rosidl_interface_packages</member_of_group>
+```
+e.g.
+```
+<package format="3">
+    .
+    .
+    .
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
+
+    <depend><dependent_service></depend>
+    <buildtool_depend>rosidl_default_generators</buildtool_depend>
+    <exec_depend>rosidl_default_runtime</exec_depend>
+    <member_of_group>rosidl_interface_packages</member_of_group>
+</package>
+```
+**Step 8:** Define your service file location for your service file declared in ***Step 7***.\
+Open ***CMakeLists.txt*** within your ***\<interface>*** folder.
+```
+nano CMakeLists.txt
+```
+Insert the following line into your ***CMakeLists.txt*** file.\
+You too need not require to enter ```DEPENDENCIES <service_folder_name>``` if your service is not dependent on other service type.
+```
+# find_package(geometry_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+    "<service_folder_name>/<service_file_name1>.srv"
+    "<service_folder_name>/<service_file_name2>.srv"
+    DEPENDENCIES <service_folder_name> # Add packages that above service depend on
+)
+```
+**Step 9:** Go to the root directory of your ROS package. (Directory that contain ***/src***).
+```
+cd ~/<your_directory>
+```
+**Step 10:** Build the modified ***\<interface_name>***.
+```
+colcon build --packages-select <interface_name>
+```
+**Step 11:** Re-source your setup file.
+```
+source install/setup.bash
+```
+
 ## ROS Message
-ROS message are messages that are being sent to a topic and the argument of these messages are stored as a text file to describe the fileds of a ROS message. All message text file will reside within the ***\<interface>*** file.
+ROS message are messages that are being sent to a topic and the argument of these messages are stored as a text file to describe the fields of a ROS message. ***A message is used to send data between nodes programically*** All message text file will reside within the ***\<interface>*** file.
 
 ROS can contain the Following field types.
 - int8, int16, int32, int64 (plus uint*)
@@ -550,9 +648,10 @@ unit8 val4
 ```
 nano package.xml
 ```
-Type the following into the end of ***\<package> \</package>*** element of your package.xml file.
+Type the following into the end of ***\<package> \</package>*** element of your package.xml file.\
+You need not enter ```<depend><dependent_message></depend>``` if your program is not dependent on a message type.
 ```
-<depend><message_file_name></depend>
+<depend><dependent_message></depend>
 <buildtool_depend>rosidl_default_generators</buildtool_depend>
 <exec_depend>rosidl_default_runtime</exec_depend>
 <member_of_group>rosidl_interface_packages</member_of_group>
@@ -567,7 +666,7 @@ e.g.
         <build_type>ament_cmake</build_type>
     </export>
 
-    <depend>MyMessage</depend>
+    <depend><dependent_message></depend>
     <buildtool_depend>rosidl_default_generators</buildtool_depend>
     <exec_depend>rosidl_default_runtime</exec_depend>
     <member_of_group>rosidl_interface_packages</member_of_group>
@@ -578,7 +677,8 @@ Open ***CMakeLists.txt*** within your ***\<interface>*** folder.
 ```
 nano CMakeLists.txt
 ```
-Insert the following line into your ***CMakeLists.txt*** file.
+Insert the following line into your ***CMakeLists.txt*** file.\
+You too need not require to enter ```DEPENDENCIES <message_folder_name>``` if your message is not dependent on other message type.
 ```
 find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
@@ -595,7 +695,7 @@ cd ~/<your_directory>
 ```
 **Step 10:** Build the modified ***\<interface_name>***.
 ```
-colcon build --package-select <interface_name>
+colcon build --packages-select <interface_name>
 ```
 **Step 11:** Re-source your setup file.
 ```
@@ -605,7 +705,7 @@ source install/setup.bash
 ```
 ros2 interface show <package_name>/<message_folder_name>/<message_file_name>
 ```
-### Create a publisher node for your message
+### Create a publisher node for your message (Create Topic)
 **Step 1:** Go to your package folder.
 ```
 cd ~/<your_directory>/src/<package_name>/<package_name>
@@ -628,9 +728,12 @@ from std_msgs.msg import String # imports the built-in string message type
 class MinimalPublisher(Node): # creates a class that inherits from Node
     def __init__(self):
         super().__init__('minimal_publisher') # defines the node name
-        # topic name = ‘topic’
-        # queue size = 10
-        self.publisher_ = self.create_publisher(String, 'topic', 10)
+        message_name = String
+        topic_name = 'topic'
+        queue_size = 10
+        self.publisher_ = self.create_publisher(message_name, topic_name, queue_size)
+        
+        # Example for publishing every 0.5 second
         timer_period = 0.5 # seconds # executes every 500ms
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0 # a counter used in the callback function below
@@ -659,6 +762,7 @@ main()
 ```
 nano package.xml
 ```
+You need not require to enter ```<exec_depend><message_file_name></exec_depend>``` if you message file is not dependent on other message files.
 ```
 <exec_depend>rclpy</exec_depend>
 <exec_depend><message_file_name></exec_depend>
@@ -721,11 +825,10 @@ class MinimalSubscriber(Node):
     # Uses the same topic: ‘topic’
     def __init__(self):
         super().__init__('minimal_subscriber')
-        self.subscription = self.create_subscription(
-            String,
-            'topic',
-            self.listener_callback,
-            10)
+        message_name = String
+        topic_name = 'topic'
+        queue_size = 10
+        self.subscription = self.create_subscription(message_name, topic_name, self.listener_callback, queue_size)
         self.subscription # prevent unused variable warning
 
     def listener_callback(self, msg):
