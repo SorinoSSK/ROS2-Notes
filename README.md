@@ -539,8 +539,11 @@ nano MyService.srv
 ```
 **Step 6:** Define your service's input type in your service file.
 ```
-int64 val1
+int64 val1      // Input message
 float64 val2
+---
+string val3      // Output message
+unit8 val4
 ```
 **Step 7:** Declare your service file for building inside package.xml file stored in your <interface_name> directory.
 ```
@@ -600,6 +603,97 @@ colcon build --packages-select <interface_name>
 source install/setup.bash
 ```
 
+### Create a service client node
+**Step 1:** Go to your package folder.
+```
+cd ~/<your_directory>/src/<package_name>/<package_name>
+```
+**Step 2:** Create a service client file.
+```
+nano <serivce_client_file_name>.py
+```
+e.g.
+```
+service_client_function.py
+```
+**Step 3:** Generate your service client file.\
+You may use the following as a reference.
+```
+import rclpy
+from rclpy.node import Node
+from waypoint_state.msg import WaypointPos as WaypointPosMsg
+from waypoint_state.srv import WaypointPos as WaypointPosSrv
+
+
+class MinimalPublisher(Node): # creates a class that inherits from Node
+    def __init__(self):
+        super().__init__('minimal_publisher') # defines the node name
+        pub_topic_name = 'waypoint_state'
+        pub_msg_name   = WaypointPosMsg
+        srv_topic_name = 'waypoint_pub'
+        srv_msg_name   = WaypointPosSrv
+        queue_size = 10
+        self.publisher  = self.create_publisher(pub_msg_name, pub_topic_name, queue_size)
+        self.service	= self.create_service(srv_msg_name, srv_topic_name, self.setWaypoint)
+
+    def setWaypoint(self, request, response): 
+        # request = service input
+        # response = service output
+        msg = WaypointPosMsg()
+        msg.waypoint_pos = request.waypoint_pos
+        print("Received message:", msg.waypoint_pos)
+        self.publisher.publish(msg)
+        response.response = "Coordinate Published."  
+        return response
+
+def main(args=None): # main function
+    rclpy.init(args=args)
+    minimal_publisher = MinimalPublisher()
+    rclpy.spin(minimal_publisher) # loops until destroyed
+    # Destroy the node explicitly
+    # (optional - otherwise it will be done automatically
+    # when the garbage collector destroys the node object)
+    minimal_publisher.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+```
+**Step 4:** Add dependencies to your ***package.xml*** file in your ***\<package_name>*** folder.
+
+Since the subscriber node uses the same dependencies or the same message type as the publisher, we do not need to add anything new to the ***package.xml*** file.
+
+**Step 5:** Add dependencies to your ***setup.py*** file in the same directory as "***Step 4***".
+```
+entry_points={
+    'console_scripts': [
+        'my_node = <package_name>.<node_name>:main',
+        'talker = <package_name>.<publisher_file_name>:main',
+        'listener = <package_name>.<subscriber_file_name>:main',
+        'sub_client = <package_name>.<service_client_file_name>:main',       // Add this line
+    ],
+},
+```
+**Step 6:** Build your package.
+```
+cd ~/<your_directory>
+```
+```
+colcon build --packages-select <package_name>
+```
+e.g.
+```
+colcon build --packages-select my_package
+```
+**Step 7:** Re-source your ***setup*** file.
+```
+source install/setup.bash
+```
+**Step 8:** Run your publisher.
+```
+ros2 run <package_name> sub_client <service_arguments>
+```
+
 ## ROS Message
 ROS message are messages that are being sent to a topic and the argument of these messages are stored as a text file to describe the fields of a ROS message. ***A message is used to send data between nodes programically*** All message text file will reside within the ***\<interface>*** file.
 
@@ -638,11 +732,8 @@ nano MyMessage.msg
 ```
 **Step 6:** Define your message's input and output type in your message file.
 ```
-int64 val1      // Input message
+int64 val1
 float64 val2
----
-string val3      // Output message
-unit8 val4
 ```
 **Step 7:** Declare your message file for building inside package.xml file stored in your <interface_name> directory.
 ```
@@ -705,6 +796,7 @@ source install/setup.bash
 ```
 ros2 interface show <package_name>/<message_folder_name>/<message_file_name>
 ```
+
 ### Create a publisher node for your message (Create Topic)
 **Step 1:** Go to your package folder.
 ```
@@ -833,6 +925,7 @@ class MinimalSubscriber(Node):
 
     def listener_callback(self, msg):
         # prints an info message to the cosole along with the data received
+        # if the msg is a custom message, msg.<Variable_Name>
         self.get_logger().info('I heard: "%s"' % msg.data)
 
 def main(args=None):
@@ -859,7 +952,7 @@ entry_points={
     'console_scripts': [
         'my_node = <package_name>.<node_name>:main',
         'talker = <package_name>.<publisher_file_name>:main',
-        'listener = package_name>.<subscriber_file_name>:main',       // Add this line
+        'listener = <package_name>.<subscriber_file_name>:main',       // Add this line
     ],
 },
 ```
@@ -878,7 +971,7 @@ colcon build --packages-select my_package
 ```
 source install/setup.bash
 ```
-**Step 8:** Run your publisher.
+**Step 8:** Run your subscriber.
 ```
 ros2 run <package_name> listener
 ```

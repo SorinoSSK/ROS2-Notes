@@ -50,3 +50,7 @@ Install pygame
 ```
 python3 -m pip install pygame
 ```
+
+## Project's final form
+ROBITS TurtleBot 3 - Tour Bot Simulation
+[![ROBITS TurtleBot 3 - Tour Bot Simulation](./Capture.PNG)](https://www.youtube.com/watch?v=JZ70-lPcNug&t=12s)
